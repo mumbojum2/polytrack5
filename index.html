@@ -24,12 +24,13 @@
         };
         window.Worker.prototype = ogworker.prototype;
 
+        const proxyKodubUrl = url => url.replace(/^(?:https?:\/\/)?vps\.kodub\.com(?::43273)?/, "https://cors-anywhere.herokuapp.com/https://vps.kodub.com");
         const ogfetch = window.fetch;
         window.fetch = async function (input, init) {
             if (typeof input === "string") {
-                input = input.replace("vps.kodub.com", "https://cors-anywhere.herokuapp.com/https://vps.kodub.com/");
+                input = proxyKodubUrl(input);
             } else if (input instanceof Request) {
-                const newUrl = input.url.replace("vps.kodub.com", "https://cors-anywhere.herokuapp.com/https://vps.kodub.com/");
+                const newUrl = proxyKodubUrl(input.url);
                 input = new Request(newUrl, input);
             }
             return ogfetch(input, init);
@@ -38,7 +39,7 @@
         const ogxml = XMLHttpRequest.prototype.open;
         XMLHttpRequest.prototype.open = function (method, url, ...rest) {
             if (typeof url === "string") {
-                url = url.replace("vps.kodub.com", "https://cors-anywhere.herokuapp.com/https://vps.kodub.com/");
+                url = proxyKodubUrl(url);
             }
             return ogxml.call(this, method, url, ...rest);
         };
