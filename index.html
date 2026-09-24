@@ -2,9 +2,10 @@
 <html>
 
 <head>
-    <base href="https://cdn.jsdelivr.net/gh/mumbojum2/polytrack5@polytrack-0.6.3-xhr-invocation-fix/">
+    <base href="https://cdn.jsdelivr.net/gh/mumbojum2/polytrack5@polytrack-0.6.3-unofficial-build-fix/">
     <script>
         window.jkdfgnjkndfg = document.querySelector('base').href;
+        window.polytrackModConfiguration = Object.assign({}, window.polytrackModConfiguration, { unblocked: true });
         fetch("simulation_worker.bundle.js").then(res => res.text()).then(text => {
             text = text.replace(
                 'importScripts("lib/polytrack_physics.js")',
