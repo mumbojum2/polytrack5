@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <base href="https://cdn.jsdelivr.net/gh/mumbojum2/polytrack5@polytrack-0.6.3-local-file-fix/">
+    <base href="https://cdn.jsdelivr.net/gh/mumbojum2/polytrack5@polytrack-0.6.3-offline-profile-fix/">
     <script>
         window.jkdfgnjkndfg = document.querySelector('base').href;
         fetch("simulation_worker.bundle.js").then(res => res.text()).then(text => {
@@ -40,13 +40,52 @@
             return ogfetch(input, init);
         };
 
-        const ogxml = XMLHttpRequest.prototype.open;
-        XMLHttpRequest.prototype.open = function (method, url, ...rest) {
-            if (typeof url === "string") {
-                url = proxyKodubUrl(url);
-            }
-            return ogxml.call(this, method, url, ...rest);
+        const NativeXMLHttpRequest = window.XMLHttpRequest;
+        const NativeXHRDone = NativeXMLHttpRequest.DONE;
+        window.XMLHttpRequest = function () {
+            const nativeXhr = new NativeXMLHttpRequest();
+            let isUserProfileRequest = false;
+            let readyState = 0;
+            let responseText = "";
+            let status = 0;
+            let onReadyStateChange = null;
+            return new Proxy(nativeXhr, {
+                get(target, property) {
+                    if (property === "open") return (method, url, ...rest) => {
+                        isUserProfileRequest = typeof url === "string" && /vps\.kodub\.com\/v6\/user/.test(url);
+                        if (isUserProfileRequest) {
+                            readyState = 1;
+                            return;
+                        }
+                        return target.open(method, proxyKodubUrl(url), ...rest);
+                    };
+                    if (property === "send") return body => {
+                        if (isUserProfileRequest) {
+                            queueMicrotask(() => {
+                                readyState = NativeXHRDone;
+                                status = 200;
+                                responseText = "null";
+                                onReadyStateChange?.();
+                            });
+                            return;
+                        }
+                        return target.send(body);
+                    };
+                    if (property === "readyState") return readyState;
+                    if (property === "status") return status;
+                    if (property === "responseText") return responseText;
+                    return Reflect.get(target, property, target);
+                },
+                set(target, property, value) {
+                    if (property === "onreadystatechange") {
+                        onReadyStateChange = value;
+                        return true;
+                    }
+                    return Reflect.set(target, property, value, target);
+                }
+            });
         };
+        window.XMLHttpRequest.DONE = NativeXHRDone;
     </script>
     <meta name="viewport"
         content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
